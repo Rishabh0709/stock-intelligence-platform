@@ -1,0 +1,1 @@
+Every component should have exactly one reason to change.
