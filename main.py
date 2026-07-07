@@ -1,63 +1,43 @@
-from config.settings import DATABASE_PATH
+import sys
 
-from src.database.db_manager import DatabaseManager
-from src.models.company import Company
-from src.repositories.company_repository import (
-    SQLiteCompanyRepository,
-)
-from src.services.company_service import CompanyService
+from src.cli.commands import CLI
 
 
 def main():
 
-    print("=" * 60)
-    print("Stock Intelligence Platform")
-    print("=" * 60)
+    cli = CLI()
 
-    db = DatabaseManager()
+    if len(sys.argv) < 2:
+        print(
+            """
+Usage:
 
-    success, error = db.test_connection()
+python main.py import RELIANCE
 
-    if not success:
-        print(error)
+python main.py list
+
+python main.py search RELIANCE
+"""
+        )
         return
 
-    print("✓ Database connected")
+    command = sys.argv[1]
 
-    db.create_tables()
+    if command == "import":
 
-    print("✓ Tables created")
+        cli.import_company(sys.argv[2])
 
-    repository = SQLiteCompanyRepository(db)
+    elif command == "list":
 
-    service = CompanyService(repository)
+        cli.list_companies()
 
-    company = Company(
-        symbol="RELIANCE",
-        company_name="Reliance Industries Ltd",
-        exchange="NSE",
-        country="India",
-        currency="INR",
-    )
+    elif command == "search":
 
-    try:
-        service.register_company(company)
-        print("✓ Company saved")
+        cli.search_company(sys.argv[2])
 
-    except ValueError as e:
-        print(e)
+    else:
 
-    saved_company = service.get_company("RELIANCE")
-
-    print("\nRetrieved Company\n")
-    print(saved_company)
-
-    print("\nDatabase Path:")
-    print(DATABASE_PATH)
-
-    print("=" * 60)
-    print("System Ready")
-    print("=" * 60)
+        print("Unknown command")
 
 
 if __name__ == "__main__":

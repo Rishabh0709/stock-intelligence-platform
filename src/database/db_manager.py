@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
 from config.settings import DATABASE_URL
-from src.database.models import metadata
 from src.database.schema import metadata
 
 class DatabaseManager:
