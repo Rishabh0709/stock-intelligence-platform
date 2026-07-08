@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 
-from sqlalchemy import insert, select
-
-from src.database.schema import companies
+from sqlalchemy import select, insert, update, delete, func
+from src.database.tables import companies, daily_prices
 from src.models.company import Company
 
+print("Loading CompanyRepository from:", __file__)
+print("companies object:", companies)
 
 class ICompanyRepository(ABC):
 
@@ -29,6 +30,10 @@ class SQLiteCompanyRepository(ICompanyRepository):
 
     def __init__(self, db_manager):
         self.db_manager = db_manager
+    
+    @property
+    def engine(self):
+        return self.db_manager.engine
 
     def save(self, company: Company):
 
@@ -101,3 +106,10 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 )
                 for row in rows
             ]
+            
+    def count(self) -> int:
+
+        stmt = select(func.count()).select_from(companies)
+
+        with self.engine.connect() as conn:
+            return conn.execute(stmt).scalar_one()

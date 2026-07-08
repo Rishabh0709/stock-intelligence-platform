@@ -1,0 +1,14 @@
+quality:
+  weight: 35
+
+growth:
+  weight: 25
+
+valuation:
+  weight: 20
+
+risk:
+  weight: 10
+
+momentum:
+  weight: 10
