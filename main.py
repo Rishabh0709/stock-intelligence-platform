@@ -1,11 +1,21 @@
 import sys
 
+from src.database.db_manager import DatabaseManager
 from src.cli.commands import CLI
 
 
 def main():
 
     cli = CLI()
+    db = DatabaseManager()
+    db.recreate_database()
+    from sqlalchemy import inspect
+
+    db = DatabaseManager()
+
+    inspector = inspect(db.engine)
+
+    print(inspector.get_table_names())
 
     if len(sys.argv) < 2:
         print(
@@ -39,6 +49,7 @@ python main.py search RELIANCE
 
         print("Unknown command")
 
-
+    
+    
 if __name__ == "__main__":
     main()

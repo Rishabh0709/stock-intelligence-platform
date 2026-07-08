@@ -1,0 +1,2 @@
+Build an investment intelligence platform that explains portfolio performance, compares it with the right benchmarks, 
+and provides transparent, evidence-based insights to help investors make better decisions.

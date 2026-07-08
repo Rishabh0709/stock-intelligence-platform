@@ -31,3 +31,14 @@ class YahooCollector(BaseCollector):
         except Exception as e:
             print(f"Error fetching {symbol}: {e}")
             return None
+            
+    def get_history(self, symbol, period="5y"):
+        ticker = yf.Ticker(f"{symbol}.NS")
+        history = ticker.history(period=period)
+        return history
+        
+    def get_snapshot(self, symbol: str):
+
+        ticker = yf.Ticker(f"{symbol}.NS")
+
+        return ticker.info

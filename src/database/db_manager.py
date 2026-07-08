@@ -1,10 +1,11 @@
 from sqlalchemy import create_engine
 from config.settings import DATABASE_URL
-from src.database.schema import metadata
+from src.database.tables import metadata
 
 class DatabaseManager:
     def __init__(self):
         self.engine = create_engine(DATABASE_URL)
+        print(f"Using database: {DATABASE_URL}")
 
     def test_connection(self):
         
