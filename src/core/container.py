@@ -4,7 +4,7 @@ from src.repositories.company_repository import SQLiteCompanyRepository
 
 from src.repositories.price_repository import SQLitePriceRepository
 
-from src.collectors.yahoo_collector import YahooCollector
+from src.providers.yahoo_provider import YahooProvider
 
 from src.services.company_service import CompanyService
 
@@ -19,8 +19,7 @@ company_repository = SQLiteCompanyRepository(db_manager)
 price_repository = SQLitePriceRepository(db_manager)
 
 
-yahoo_collector = YahooCollector()
-
+provider = YahooProvider()
 
 company_service = CompanyService(
     company_repository,

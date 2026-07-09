@@ -1,28 +1,25 @@
-# Python
 __pycache__/
-*.py[cod]
-*.pyo
 
-# Virtual Environment
-.venv/
-venv/
+*.pyc
 
-# Database
-*.db
 *.sqlite3
 
-# VS Code
-.vscode/
+*.db
 
-# Pytest
-.pytest_cache/
-
-# Logs
-*.log
-
-# Environment variables
 .env
 
-# OS files
+.vscode/settings.json
+
+.idea/
+
+.streamlit/
+
+*.log
+
+.coverage
+
+.pytest_cache/
+
 .DS_Store
+
 Thumbs.db
