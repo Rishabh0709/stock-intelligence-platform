@@ -4,9 +4,6 @@ from sqlalchemy import select, insert, update, delete, func
 from src.database.tables import companies, daily_prices
 from src.models.company import Company
 
-print("Loading CompanyRepository from:", __file__)
-print("companies object:", companies)
-
 class ICompanyRepository(ABC):
 
     @abstractmethod
@@ -37,9 +34,8 @@ class SQLiteCompanyRepository(ICompanyRepository):
 
     def save(self, company: Company):
 
-        with self.db_manager.engine.begin() as conn:
-
-            stmt = insert(companies).values(
+        
+        stmt = insert(companies).values(
                 symbol=company.symbol,
                 company_name=company.company_name,
                 exchange=company.exchange,
@@ -51,9 +47,13 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 website=company.website,
                 business_description=company.business_description,
                 created_at=company.created_at,
-            )
+        )
+        with self.engine.begin() as conn:
 
-            conn.execute(stmt)
+            result = conn.execute(stmt)
+        
+        company.id = result.inserted_primary_key[0]
+        return company
 
     def get_by_symbol(self, symbol: str):
 
@@ -69,6 +69,7 @@ class SQLiteCompanyRepository(ICompanyRepository):
             return Company(
                 symbol=row.symbol,
                 company_name=row.company_name,
+                id = row.id,
                 exchange=row.exchange,
                 isin=row.isin,
                 sector=row.sector,
@@ -92,6 +93,7 @@ class SQLiteCompanyRepository(ICompanyRepository):
 
             return [
                 Company(
+                    id=row.id,
                     symbol=row.symbol,
                     company_name=row.company_name,
                     exchange=row.exchange,

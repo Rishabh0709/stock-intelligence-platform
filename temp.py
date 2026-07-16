@@ -1,5 +1,13 @@
-from src.core.container import company_service
+from sqlalchemy import select
+from src.database.tables import daily_prices
 
-company = company_service.import_company("RELIANCE")
+stmt = (
+    select(daily_prices)
+    .where(daily_prices.c.company_id == company.id)
+    .order_by(daily_prices.c.price_date.desc())
+    .limit(5)
+)
 
-print(company)
+with bootstrap.price_repository.engine.connect() as conn:
+    for row in conn.execute(stmt):
+        print(row)

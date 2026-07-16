@@ -7,9 +7,11 @@ class Company:
     """
     Represents a listed company in our platform.
     """
-
+    
     symbol: str
     company_name: str
+    id: int | None = None
+
 
     exchange: str = "NSE"
 

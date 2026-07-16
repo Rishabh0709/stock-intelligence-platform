@@ -1,10 +1,9 @@
-from abc import ABC, abstractmethod
 from datetime import date
-
-import pandas as pd
+from abc import ABC, abstractmethod
 
 from src.dto.company_dto import CompanyDTO
 from src.dto.snapshot_dto import SnapshotDTO
+from src.dto.daily_price_dto import DailyPriceDTO
 
 
 class IDataProvider(ABC):
@@ -33,5 +32,8 @@ class IDataProvider(ABC):
         symbol: str,
         start_date: date,
         end_date: date,
-    ) -> pd.DataFrame:
+    ) -> list[DailyPriceDTO]:
+        """
+        Returns historical prices from the provider.
+        """
         pass

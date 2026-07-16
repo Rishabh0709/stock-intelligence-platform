@@ -1,90 +1,75 @@
-from src.collectors.yahoo_collector import YahooCollector
-from src.models.stock_snapshot import StockSnapshot
+from src.models.company import Company
+from src.providers.data_provider import IDataProvider
+from src.repositories.company_repository import ICompanyRepository
+from src.repositories.price_repository import IPriceRepository
+from src.services.price_sync_service import PriceSyncService
+from src.mapper.company_mapper import CompanyMapper
 
+from src.models.daily_price import DailyPrice
+from src.models.stock_data import StockData
+from src.analytics.core.price_series import PriceSeries
 
 class StockExplorerService:
+    """
+    Coordinates repositories and providers.
 
-    def __init__(self, collector: YahooCollector):
+    The UI should interact only with this service.
+    """
 
-        self.collector = collector
+    def __init__(
+        self,
+        provider: IDataProvider,
+        company_repository: ICompanyRepository,
+        price_repository: IPriceRepository,
+        price_sync_service: PriceSyncService,
+    ):
 
-    def get_snapshot(self, symbol: str) -> StockSnapshot:
+        self.provider = provider
+        self.company_repository = company_repository
+        self.price_repository = price_repository
+        self.price_sync_service = price_sync_service
 
-        info = self.collector.get_snapshot(symbol)
+    def get_company(self, symbol: str) -> Company:
+        """
+        Returns company information.
+        Imports the company automatically if it does not exist.
+        """
+        symbol = symbol.upper().strip()
+        company = self.company_repository.get_by_symbol(symbol)
 
-        snapshot = StockSnapshot(
+        if company is not None:
+            return company
 
-            symbol=info.get("symbol"),
+        dto = self.provider.get_company(symbol)
 
-            company_name=info.get("longName"),
+        company = CompanyMapper.to_domain(dto)
 
-            exchange=info.get("exchange"),
+        self.company_repository.save(company)
 
-            sector=info.get("sector"),
+        return self.company_repository.get_by_symbol(symbol)
+    
+        
+    def get_prices(self, symbol: str, sync: bool = True) -> list[DailyPrice]:
 
-            industry=info.get("industry"),
+        company = self.get_company(symbol)
+        if sync:    
+            self.price_sync_service.sync(company)
 
-            website=info.get("website"),
+        return self.price_repository.list_by_company(company.id)
+        
+    def get_stock(self, symbol: str) -> StockData:
+        """
+        Returns the complete stock object containing
+        company information and historical price series.
+        """
 
-            business_summary=info.get("longBusinessSummary"),
+        company = self.get_company(symbol)
 
-            country=info.get("country"),
+        prices = self.get_prices(symbol)
 
-            currency=info.get("currency"),
+        series = PriceSeries(prices)
 
-            current_price=info.get("currentPrice"),
-
-            previous_close=info.get("previousClose"),
-
-            open_price=info.get("open"),
-
-            day_high=info.get("dayHigh"),
-
-            day_low=info.get("dayLow"),
-
-            fifty_two_week_high=info.get("fiftyTwoWeekHigh"),
-
-            fifty_two_week_low=info.get("fiftyTwoWeekLow"),
-
-            volume=info.get("volume"),
-
-            average_volume=info.get("averageVolume"),
-
-            market_cap=info.get("marketCap"),
-
-            enterprise_value=info.get("enterpriseValue"),
-
-            shares_outstanding=info.get("sharesOutstanding"),
-
-            trailing_pe=info.get("trailingPE"),
-
-            forward_pe=info.get("forwardPE"),
-
-            price_to_book=info.get("priceToBook"),
-
-            peg_ratio=info.get("pegRatio"),
-
-            roe=info.get("returnOnEquity"),
-
-            roa=info.get("returnOnAssets"),
-
-            gross_margin=info.get("grossMargins"),
-
-            operating_margin=info.get("operatingMargins"),
-
-            profit_margin=info.get("profitMargins"),
-
-            revenue_growth=info.get("revenueGrowth"),
-
-            earnings_growth=info.get("earningsGrowth"),
-
-            dividend_rate=info.get("dividendRate"),
-
-            dividend_yield=info.get("dividendYield"),
-
-            payout_ratio=info.get("payoutRatio"),
-
-            ex_dividend_date=info.get("exDividendDate")
-        )
-
-        return snapshot
+        return StockData(
+            company=company,
+            price_series=series,
+            )

@@ -1,23 +1,12 @@
-from src.collectors.yahoo_collector import YahooCollector
-from src.repositories.company_repository import SQLiteCompanyRepository
-from src.services.company_service import CompanyService
-from src.database.db_manager import DatabaseManager
+from src.bootstrap import Bootstrap
 
 
 class CLI:
 
     def __init__(self):
+        
+        self.app = Bootstrap()
 
-        db = DatabaseManager()
-        db.create_tables()
-
-        repository = SQLiteCompanyRepository(db)
-        collector = YahooCollector()
-
-        self.service = CompanyService(
-            repository,
-            collector
-        )
 
     def import_company(self, symbol):
 
@@ -37,3 +26,22 @@ class CLI:
         company = self.service.get_company(symbol)
 
         print(company)
+        
+    def sync(self, symbol: str):
+
+        company = self.app.company_repository.get_by_symbol(symbol)
+
+        if company is None:
+            print(f"Company '{symbol}' not found.")
+            return
+
+        result = self.app.price_sync_service.sync(company)
+
+        print()
+        print("=" * 40)
+        print(f"Company     : {result.company_symbol}")
+        print(f"Downloaded  : {result.downloaded_records}")
+        print(f"Inserted    : {result.inserted_records}")
+        print(f"Skipped     : {result.skipped_records}")
+        print(f"Latest Date : {result.latest_price_date}")
+        print("=" * 40)

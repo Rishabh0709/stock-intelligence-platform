@@ -6,6 +6,9 @@ class DatabaseManager:
     def __init__(self):
         self.engine = create_engine(DATABASE_URL)
         print(f"Using database: {DATABASE_URL}")
+        
+        # Automatically create tables if they don't exist
+        metadata.create_all(self.engine)
 
     def test_connection(self):
         
@@ -18,8 +21,7 @@ class DatabaseManager:
             return False, str(e)
         
 
-    def create_tables(self):
-        metadata.create_all(self.engine)
+    
         
     def recreate_database(self):
         metadata.drop_all(self.engine)

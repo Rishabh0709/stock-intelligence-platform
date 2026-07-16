@@ -6,6 +6,7 @@ import yfinance as yf
 from config.settings import DEFAULT_EXCHANGE
 from src.dto.company_dto import CompanyDTO
 from src.dto.snapshot_dto import SnapshotDTO
+from src.dto.daily_price_dto import DailyPriceDTO
 from src.providers.data_provider import IDataProvider
 
 
@@ -29,7 +30,7 @@ class YahooProvider(IDataProvider):
 
         return CompanyDTO(
 
-            symbol=info.get("symbol", symbol),
+            symbol=symbol.upper(),
 
             company_name=info.get("longName", symbol),
 
@@ -101,10 +102,32 @@ class YahooProvider(IDataProvider):
         symbol: str,
         start_date: date,
         end_date: date,
-    ) -> pd.DataFrame:
+        ) -> list[DailyPriceDTO]:
 
-        return self._ticker(symbol).history(
-            start=start_date,
-            end=end_date,
-            auto_adjust=False,
-        )
+        history = self._ticker(symbol).history(start=start_date, end=end_date, auto_adjust=False,)
+        history = history.dropna(
+            subset=[
+            "Open",
+            "High",
+            "Low",
+            "Close",
+            ]
+            )
+        prices = []
+
+        for price_date, row in history.iterrows():
+
+            prices.append(
+
+                DailyPriceDTO(
+                price_date=price_date.date(),
+                open_price=float(row["Open"]),
+                high_price=float(row["High"]),
+                low_price=float(row["Low"]),
+                close_price=float(row["Close"]),
+                adjusted_close = (None if pd.isna(row["Adj Close"]) else float(row["Adj Close"])),
+                volume=int(row["Volume"])
+                )
+            )
+
+        return prices
