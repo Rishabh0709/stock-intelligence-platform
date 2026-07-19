@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    MetaData,
     Table,
     Column,
     Integer,
@@ -11,25 +12,11 @@ from sqlalchemy import (
     DateTime,
     BigInteger,
     ForeignKey,
-    MetaData,
     UniqueConstraint,
 )
 
-from sqlalchemy import (
-    MetaData,
-    Table,
-    Column,
-    Integer,
-    BigInteger,
-    String,
-    Float,
-    Date,
-    DateTime,
-    Text,
-    ForeignKey,
-    UniqueConstraint,
-)
 from sqlalchemy.sql import func
+from datetime import datetime
 
 metadata = MetaData()
 
@@ -103,5 +90,61 @@ daily_prices = Table(
         "company_id",
         "price_date",
         name="uq_company_price_date",
+    ),
+)
+
+
+# ==========================================================
+# Portfolio Holdings
+# =========================================================
+
+portfolio_holdings = Table(
+    "portfolio_holdings",
+    metadata,
+
+    Column(
+        "id",
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    ),
+
+    Column(
+        "company_id",
+        Integer,
+        ForeignKey("companies.id"),
+        nullable=False,
+    ),
+
+    Column(
+        "quantity",
+        Float,
+        nullable=False,
+    ),
+
+    Column(
+        "average_price",
+        Float,
+        nullable=False,
+    ),
+
+    Column(
+        "created_at",
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    ),
+
+    Column(
+        "updated_at",
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    ),
+
+    UniqueConstraint(
+        "company_id",
+        name="uq_portfolio_company",
     ),
 )

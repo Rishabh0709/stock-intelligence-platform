@@ -4,9 +4,6 @@ from sqlalchemy import select, insert, update, delete, func
 from src.database.tables import companies, daily_prices
 from src.models.company import Company
 
-print("Loading CompanyRepository from:", __file__)
-print("companies object:", companies)
-
 class ICompanyRepository(ABC):
 
     @abstractmethod
@@ -24,6 +21,25 @@ class ICompanyRepository(ABC):
     @abstractmethod
     def list_all(self):
         pass
+    
+    @abstractmethod
+    def get(
+        self,
+        company_id: int,
+        ) -> Company | None:
+        pass
+    
+    @abstractmethod
+    def get_by_isin(self, isin: str):
+        pass
+    
+    @abstractmethod
+    def update_isin(
+        self,
+        company_id: int,
+        isin: str,
+    ) -> None:
+        pass
 
 
 class SQLiteCompanyRepository(ICompanyRepository):
@@ -37,9 +53,8 @@ class SQLiteCompanyRepository(ICompanyRepository):
 
     def save(self, company: Company):
 
-        with self.db_manager.engine.begin() as conn:
-
-            stmt = insert(companies).values(
+        
+        stmt = insert(companies).values(
                 symbol=company.symbol,
                 company_name=company.company_name,
                 exchange=company.exchange,
@@ -51,9 +66,13 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 website=company.website,
                 business_description=company.business_description,
                 created_at=company.created_at,
-            )
+        )
+        with self.engine.begin() as conn:
 
-            conn.execute(stmt)
+            result = conn.execute(stmt)
+        
+        company.id = result.inserted_primary_key[0]
+        return company
 
     def get_by_symbol(self, symbol: str):
 
@@ -69,6 +88,7 @@ class SQLiteCompanyRepository(ICompanyRepository):
             return Company(
                 symbol=row.symbol,
                 company_name=row.company_name,
+                id = row.id,
                 exchange=row.exchange,
                 isin=row.isin,
                 sector=row.sector,
@@ -80,6 +100,42 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 created_at=row.created_at,
             )
 
+    
+    def get_by_isin(
+        self,
+        isin: str,
+        ):
+
+        stmt = (
+        select(companies)
+        .where(companies.c.isin == isin))
+
+        with self.db_manager.engine.connect() as conn:
+
+            row = conn.execute(stmt).mappings().first()
+
+        if row is None:
+            return None
+
+        return Company(**row)
+    
+    
+    def update_isin(
+        self,
+        company_id: int,
+        isin: str,
+    ) -> None:
+
+        stmt = (
+        update(companies)
+        .where(companies.c.id == company_id)
+        .values(isin=isin,)
+        )
+
+        with self.db_manager.engine.begin() as conn:
+            conn.execute(stmt)
+    
+    
     def exists(self, symbol: str):
 
         return self.get_by_symbol(symbol) is not None
@@ -92,6 +148,7 @@ class SQLiteCompanyRepository(ICompanyRepository):
 
             return [
                 Company(
+                    id=row.id,
                     symbol=row.symbol,
                     company_name=row.company_name,
                     exchange=row.exchange,
@@ -107,6 +164,25 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 for row in rows
             ]
             
+    
+    def get(
+        self,
+        company_id: int,
+        ) -> Company | None:
+
+        stmt = (select(companies).where(companies.c.id == company_id))
+
+        with self.db_manager.engine.connect() as conn:
+
+            row = conn.execute(stmt).mappings().first()
+
+        if row is None:
+            return None
+
+        return Company(**row)
+    
+    
+    
     def count(self) -> int:
 
         stmt = select(func.count()).select_from(companies)

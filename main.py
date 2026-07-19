@@ -1,55 +1,41 @@
-import sys
-
-from src.database.db_manager import DatabaseManager
+import argparse
+from src.bootstrap import Bootstrap
 from src.cli.commands import CLI
-
 
 def main():
 
+    parser = argparse.ArgumentParser(
+        description="Stock Intelligence Platform"
+    )
+
+    subparsers = parser.add_subparsers(dest="command")
+
+    sync_parser = subparsers.add_parser(
+        "sync",
+        help="Synchronize stock prices",
+    )
+
+    sync_parser.add_argument(
+        "symbol",
+        help="Stock Symbol",
+    )
+    bootstrap = Bootstrap()
+
+    company = bootstrap.company_repository.get_by_symbol("RELIANCE")
+
+    rows = bootstrap.price_repository.list_by_company(company.id)
+
+    print(rows[0])
+    args = parser.parse_args()
+
     cli = CLI()
-    db = DatabaseManager()
-    db.recreate_database()
-    from sqlalchemy import inspect
 
-    db = DatabaseManager()
-
-    inspector = inspect(db.engine)
-
-    print(inspector.get_table_names())
-
-    if len(sys.argv) < 2:
-        print(
-            """
-Usage:
-
-python main.py import RELIANCE
-
-python main.py list
-
-python main.py search RELIANCE
-"""
-        )
-        return
-
-    command = sys.argv[1]
-
-    if command == "import":
-
-        cli.import_company(sys.argv[2])
-
-    elif command == "list":
-
-        cli.list_companies()
-
-    elif command == "search":
-
-        cli.search_company(sys.argv[2])
+    if args.command == "sync":
+        cli.sync(args.symbol.upper())
 
     else:
+        parser.print_help()
 
-        print("Unknown command")
 
-    
-    
 if __name__ == "__main__":
     main()
