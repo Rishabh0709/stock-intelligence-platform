@@ -1,19 +1,12 @@
+import pandas as pd
+
 from src.analytics.core.price_series import PriceSeries
+from src.models.drawdown import Drawdown
 
 
 class DrawdownCalculator:
     """
     Calculates drawdown statistics.
-
-    Drawdown measures decline from previous peak.
-
-    Example
-
-    Peak = 100
-
-    Current = 80
-
-    Drawdown = -20%
     """
 
     def __init__(
@@ -22,67 +15,54 @@ class DrawdownCalculator:
     ):
         self.series = series
 
-    def drawdown_series(self) -> list[float]:
-        """
-        Returns drawdown for every trading day.
+    def historical(self) -> list[Drawdown]:
 
-        Values range from
+        df = self.series.dataframe.copy()
 
-        0.0      -> New High
+        close = df["Close"]
 
-        -0.15    -> 15% below previous peak
-        """
+        running_max = close.cummax()
 
-        prices = [
-            price.adjusted_close
-            for price in self.series.prices
-            if price.adjusted_close is not None
+        drawdowns = (close - running_max) / running_max
+
+        result = []
+
+        for dt, value in zip(df["Date"], drawdowns):
+
+            if isinstance(dt, pd.Timestamp):
+                dt = dt.date()
+
+            result.append(
+                Drawdown(
+                    date=dt,
+                    drawdown=(
+                        None
+                        if pd.isna(value)
+                        else float(value)
+                    ),
+                )
+            )
+
+        return result
+
+    def latest(self) -> float | None:
+
+        history = self.historical()
+
+        if not history:
+            return None
+
+        return history[-1].drawdown
+
+    def maximum(self) -> float | None:
+
+        values = [
+            x.drawdown
+            for x in self.historical()
+            if x.drawdown is not None
         ]
 
-        if not prices:
-            return []
-
-        peak = prices[0]
-
-        drawdowns = []
-
-        for price in prices:
-
-            if price > peak:
-                peak = price
-
-            drawdown = (price - peak) / peak
-
-            drawdowns.append(drawdown)
-
-        return drawdowns
-
-    def maximum_drawdown(self) -> float | None:
-        """
-        Returns worst historical drawdown.
-
-        Example
-
-        -0.42 = -42%
-        """
-
-        drawdowns = self.drawdown_series()
-
-        if not drawdowns:
+        if not values:
             return None
 
-        return min(drawdowns)
-
-    def current_drawdown(self) -> float | None:
-        """
-        Returns drawdown from latest price.
-
-        Useful for dashboards.
-        """
-
-        drawdowns = self.drawdown_series()
-
-        if not drawdowns:
-            return None
-
-        return drawdowns[-1]
+        return min(values)

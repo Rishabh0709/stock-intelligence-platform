@@ -1,88 +1,90 @@
+from datetime import date
+
 import pandas as pd
 import pandas_ta as ta
 
-from src.analytics.indicators.indicator_base import IndicatorBase
+from src.analytics.core.price_series import PriceSeries
+from src.models.moving_average import MovingAverage
 
 
-class MovingAverageCalculator(IndicatorBase):
-    """
-    Calculates Simple and Exponential Moving Averages.
-    """
+class MovingAverageCalculator:
 
-    # ==========================================================
-    # Simple Moving Average
-    # ==========================================================
+    def __init__(self, series: PriceSeries):
+        self.series = series
 
-    def sma_series(
+    def _build(
         self,
-        window: int,
-    ) -> list[float | None]:
+        dates,
+        values,
+        *,
+        is_sma: bool,
+    ) -> list[MovingAverage]:
 
-        if window <= 0:
-            raise ValueError(
-                "Window must be positive."
+        result = []
+
+        for dt, value in zip(dates, values):
+
+            if isinstance(dt, pd.Timestamp):
+                dt = dt.date()
+
+            value = (
+                None
+                if pd.isna(value)
+                else float(value)
             )
 
-        values = ta.sma(
-            self.dataframe["Adj Close"],
-            length=window,
-        )
-
-        return self.pandas_to_list(values)
-
-    def calculate_sma(
-        self,
-        window: int,
-    ) -> float | None:
-
-        return self.latest(
-            self.sma_series(window)
-        )
-
-    # ==========================================================
-    # Exponential Moving Average
-    # ==========================================================
-
-    def ema_series(
-        self,
-        window: int,
-    ) -> list[float | None]:
-
-        if window <= 0:
-            raise ValueError(
-                "Window must be positive."
+            result.append(
+                MovingAverage(
+                    date=dt,
+                    sma=value if is_sma else None,
+                    ema=None if is_sma else value,
+                )
             )
 
-        values = ta.ema(
-            self.dataframe["Adj Close"],
-            length=window,
-        )
-
-        return self.pandas_to_list(values)
-
-    def calculate_ema(
-        self,
-        window: int,
-    ) -> float | None:
-
-        return self.latest(
-            self.ema_series(window)
-        )
-
-    # ==========================================================
-    # Backward Compatibility
-    # ==========================================================
+        return result
 
     def sma(
         self,
-        window: int,
-    ) -> float | None:
+        period: int = 20,
+    ) -> list[MovingAverage]:
 
-        return self.calculate_sma(window)
+        df = self.series.dataframe.copy()
+
+        values = ta.sma(
+            df["Close"],
+            length=period,
+        )
+
+        return self._build(
+            df["Date"],
+            values,
+            is_sma=True,
+        )
 
     def ema(
         self,
-        window: int,
-    ) -> float | None:
+        period: int = 20,
+    ) -> list[MovingAverage]:
 
-        return self.calculate_ema(window)
+        df = self.series.dataframe.copy()
+
+        values = ta.ema(
+            df["Close"],
+            length=period,
+        )
+
+        return self._build(
+            df["Date"],
+            values,
+            is_sma=False,
+        )
+        
+    def latest_ema(self, period: int = 20):
+    
+        #print(f'latest ema: {self.ema(period)[-1]}')
+        return self.ema(period)[-1]
+    
+    def latest_sma(self, period: int = 20):
+        
+        #print(f'latest sma: {self.sma(period)[-1]}')
+        return self.sma(period)[-1]

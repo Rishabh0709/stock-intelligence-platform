@@ -21,6 +21,25 @@ class ICompanyRepository(ABC):
     @abstractmethod
     def list_all(self):
         pass
+    
+    @abstractmethod
+    def get(
+        self,
+        company_id: int,
+        ) -> Company | None:
+        pass
+    
+    @abstractmethod
+    def get_by_isin(self, isin: str):
+        pass
+    
+    @abstractmethod
+    def update_isin(
+        self,
+        company_id: int,
+        isin: str,
+    ) -> None:
+        pass
 
 
 class SQLiteCompanyRepository(ICompanyRepository):
@@ -81,6 +100,42 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 created_at=row.created_at,
             )
 
+    
+    def get_by_isin(
+        self,
+        isin: str,
+        ):
+
+        stmt = (
+        select(companies)
+        .where(companies.c.isin == isin))
+
+        with self.db_manager.engine.connect() as conn:
+
+            row = conn.execute(stmt).mappings().first()
+
+        if row is None:
+            return None
+
+        return Company(**row)
+    
+    
+    def update_isin(
+        self,
+        company_id: int,
+        isin: str,
+    ) -> None:
+
+        stmt = (
+        update(companies)
+        .where(companies.c.id == company_id)
+        .values(isin=isin,)
+        )
+
+        with self.db_manager.engine.begin() as conn:
+            conn.execute(stmt)
+    
+    
     def exists(self, symbol: str):
 
         return self.get_by_symbol(symbol) is not None
@@ -109,6 +164,25 @@ class SQLiteCompanyRepository(ICompanyRepository):
                 for row in rows
             ]
             
+    
+    def get(
+        self,
+        company_id: int,
+        ) -> Company | None:
+
+        stmt = (select(companies).where(companies.c.id == company_id))
+
+        with self.db_manager.engine.connect() as conn:
+
+            row = conn.execute(stmt).mappings().first()
+
+        if row is None:
+            return None
+
+        return Company(**row)
+    
+    
+    
     def count(self) -> int:
 
         stmt = select(func.count()).select_from(companies)
