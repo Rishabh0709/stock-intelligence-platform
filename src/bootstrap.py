@@ -10,6 +10,7 @@ from src.portfolio.portfolio_import_service import PortfolioImportService
 from src.portfolio.portfolio_analyzer import PortfolioAnalyzer
 from src.recommendation.recommendation_engine import RecommendationEngine
 from src.scoring.score_engine import ScoreEngine
+from src.services.dashboard_service import DashboardService
 
 
 class Bootstrap:
@@ -22,9 +23,20 @@ class Bootstrap:
         self.portfolio_repository = SQLitePortfolioRepository(db)
         self.recommendation_engine = RecommendationEngine()
         self.score_engine = ScoreEngine()
+        self.provider = YahooProvider()
+        self.price_sync_service = PriceSyncService(
+        provider=self.provider,
+        company_repository=self.company_repository,
+        price_repository=self.price_repository,
+        )
+
+        self.company_service = CompanyService(
+                               repository = self.company_repository,
+                               provider = self.provider)
         self.portfolio_import_service = PortfolioImportService(
-                                        company_repository = self.company_repository,
-                                        portfolio_repository = self.portfolio_repository
+                                        company_service=self.company_service,
+                                        portfolio_repository=self.portfolio_repository,
+                                        price_sync_service=self.price_sync_service,
                                         )
         self.portfolio_analyzer = PortfolioAnalyzer(
                                         company_repository = self.company_repository,
@@ -33,14 +45,9 @@ class Bootstrap:
                                         recommendation_engine = self.recommendation_engine,
                                         score_engine = self.score_engine
                                         )
-        self.provider = YahooProvider()
+        
 
-        self.price_sync_service = PriceSyncService(
-        provider=self.provider,
-        company_repository=self.company_repository,
-        price_repository=self.price_repository,
-        )
-
+        
         self.stock_explorer_service = StockExplorerService(
         provider=self.provider,
         company_repository=self.company_repository,
@@ -48,4 +55,8 @@ class Bootstrap:
         price_sync_service=self.price_sync_service,
         )
         
-        
+        self.dashboard_service = DashboardService(
+        company_repository=self.company_repository,
+        price_repository=self.price_repository,
+        portfolio_analyzer=self.portfolio_analyzer,
+        )

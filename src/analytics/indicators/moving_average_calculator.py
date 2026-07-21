@@ -13,12 +13,15 @@ class MovingAverageCalculator:
         self.series = series
 
     def _build(
-        self,
-        dates,
-        values,
-        *,
-        is_sma: bool,
+    self,
+    dates,
+    values,
+    *,
+    is_sma: bool,
     ) -> list[MovingAverage]:
+
+        if values is None:
+            return []
 
         result = []
 
@@ -28,20 +31,21 @@ class MovingAverageCalculator:
                 dt = dt.date()
 
             value = (
-                None
-                if pd.isna(value)
-                else float(value)
+            None
+            if pd.isna(value)
+            else float(value)
             )
 
             result.append(
-                MovingAverage(
-                    date=dt,
-                    sma=value if is_sma else None,
-                    ema=None if is_sma else value,
-                )
+            MovingAverage(
+                date=dt,
+                sma=value if is_sma else None,
+                ema=None if is_sma else value,
+            )
             )
 
         return result
+    
 
     def sma(
         self,
@@ -50,6 +54,9 @@ class MovingAverageCalculator:
 
         df = self.series.dataframe.copy()
 
+        if len(df) < period:
+            return []
+        
         values = ta.sma(
             df["Close"],
             length=period,
@@ -68,6 +75,9 @@ class MovingAverageCalculator:
 
         df = self.series.dataframe.copy()
 
+        if len(df) < period:
+            return []
+        
         values = ta.ema(
             df["Close"],
             length=period,
@@ -79,12 +89,29 @@ class MovingAverageCalculator:
             is_sma=False,
         )
         
-    def latest_ema(self, period: int = 20):
     
-        #print(f'latest ema: {self.ema(period)[-1]}')
-        return self.ema(period)[-1]
+    def latest_ema(self, period: int = 20):
+
+        averages = self.ema(period)
+
+        if not averages:
+            return MovingAverage(
+            date=date.today(),
+            sma=None,
+            ema=None,
+            )
+
+        return averages[-1]
     
     def latest_sma(self, period: int = 20):
-        
-        #print(f'latest sma: {self.sma(period)[-1]}')
-        return self.sma(period)[-1]
+
+        averages = self.sma(period)
+
+        if not averages:
+            return MovingAverage(
+            date=date.today(),
+            sma=None,
+            ema=None,
+            )
+
+        return averages[-1]

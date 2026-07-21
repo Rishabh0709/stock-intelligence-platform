@@ -134,6 +134,7 @@ class SQLitePriceRepository(IPriceRepository):
         stmt = (
             select(daily_prices)
             .where(daily_prices.c.price_date.between(start_date, end_date,))
+            .where(daily_prices.c.company_id == company_id)
             .order_by(daily_prices.c.price_date)
         )
 

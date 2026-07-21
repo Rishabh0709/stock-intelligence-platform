@@ -48,11 +48,18 @@ class PortfolioAnalyzer:
         holdings = self.portfolio_repository.get_all()
 
         for holding in holdings:
-
+           
+            
             company = self.company_repository.get(
                 holding.company_id,
             )
 
+            print(
+            company.symbol,
+            company.id,
+            len(self.price_repository.list_by_company(company.id))
+            )    
+            
             if company is None:
                 continue
 
@@ -69,6 +76,7 @@ class PortfolioAnalyzer:
                 company=company,
                 price_series=price_series)
 
+            print(company.symbol, len(prices))
             analysis = StockAnalyzer(stock)
             score = self.score_engine.score(analysis)
             recommendation = self.recommendation_engine.recommend(score)

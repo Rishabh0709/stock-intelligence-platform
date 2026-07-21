@@ -10,8 +10,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-from src.core.container import dashboard_service
+from src.bootstrap import Bootstrap
+bootstrap = Bootstrap()
 
+dashboard_service = bootstrap.dashboard_service
 
 st.set_page_config(
     page_title="Stock Intelligence Platform",
@@ -23,6 +25,11 @@ summary = dashboard_service.get_dashboard_summary()
 
 portfolio = summary["portfolio"]
 
+st.write("Companies:", summary["companies"])
+st.write("Portfolio positions:", len(portfolio.positions))
+
+for p in portfolio.positions[:5]:
+    st.write(p.symbol)
 
 # -------------------------------------------------------
 # Greeting

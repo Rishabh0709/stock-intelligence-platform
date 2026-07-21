@@ -4,59 +4,63 @@ from src.models.portfolio_holding import PortfolioHolding
 from src.portfolio.importer.zerodha_holding_parser import (
     ZerodhaHoldingParser,
 )
-from src.repositories.company_repository import (
-    SQLiteCompanyRepository,
-)
+from src.services.company_service import CompanyService
 from src.repositories.portfolio_repository import (
     SQLitePortfolioRepository,
 )
 
+from src.services.price_sync_service import PriceSyncService
 
 class PortfolioImportService:
     """
     Imports holdings from a Zerodha Holdings CSV into the portfolio.
+    Automatically creates missing companies.
     """
 
     def __init__(
         self,
-        company_repository: SQLiteCompanyRepository,
+        company_service: CompanyService,
         portfolio_repository: SQLitePortfolioRepository,
+        price_sync_service:PriceSyncService
     ):
-        self.company_repository = company_repository
+        self.company_service = company_service
         self.portfolio_repository = portfolio_repository
         self.parser = ZerodhaHoldingParser()
+        self.price_sync_service = price_sync_service
 
     def import_holdings(
         self,
         file_path: str | Path,
     ) -> int:
 
+        print(">>> USING NEW PortfolioImportService <<<")
+        print(__file__)
         imported_holdings = self.parser.parse(file_path)
 
         imported_count = 0
 
         for imported in imported_holdings:
 
-            company = self.company_repository.get_by_isin(
-                imported.isin,
-            )
+            try:
 
-            if company is None:
-
-                company = self.company_repository.get_by_symbol(imported.symbol,)
-
-                if company is not None:
-
-                    self.company_repository.update_isin(company.id, imported.isin,)
-                    print(f"Updated ISIN for {company.symbol}: {imported.isin}")
-
-                    company = self.company_repository.get_by_isin(imported.isin,)
-            
-            if company is None:
-                print(
-                    f"[WARNING] Company not found for "
-                    f"{imported.symbol} ({imported.isin})"
+                company = self.company_service.ensure_company(
+                    symbol=imported.symbol,
+                    isin=imported.isin,
                 )
+                print(f"Downloading prices for {company.symbol}...")
+                result = self.price_sync_service.sync(company)
+                print(
+                    f"{company.symbol}: downloaded={result.downloaded_records}, "
+                    f"inserted={result.inserted_records}"
+                    )
+
+            except Exception as ex:
+
+                print(
+                    f"[WARNING] Unable to import "
+                    f"{imported.symbol}: {ex}"
+                )
+
                 continue
 
             holding = PortfolioHolding(
