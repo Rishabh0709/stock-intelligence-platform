@@ -4,9 +4,7 @@ from src.models.portfolio_holding import PortfolioHolding
 from src.portfolio.importer.zerodha_holding_parser import (
     ZerodhaHoldingParser,
 )
-from src.repositories.company_repository import (
-    SQLiteCompanyRepository,
-)
+from src.services.company_service import CompanyService
 from src.repositories.portfolio_repository import (
     SQLitePortfolioRepository,
 )
@@ -15,14 +13,15 @@ from src.repositories.portfolio_repository import (
 class PortfolioImportService:
     """
     Imports holdings from a Zerodha Holdings CSV into the portfolio.
+    Automatically creates missing companies.
     """
 
     def __init__(
         self,
-        company_repository: SQLiteCompanyRepository,
+        company_service: CompanyService,
         portfolio_repository: SQLitePortfolioRepository,
     ):
-        self.company_repository = company_repository
+        self.company_service = company_service
         self.portfolio_repository = portfolio_repository
         self.parser = ZerodhaHoldingParser()
 
@@ -37,26 +36,20 @@ class PortfolioImportService:
 
         for imported in imported_holdings:
 
-            company = self.company_repository.get_by_isin(
-                imported.isin,
-            )
+            try:
 
-            if company is None:
-
-                company = self.company_repository.get_by_symbol(imported.symbol,)
-
-                if company is not None:
-
-                    self.company_repository.update_isin(company.id, imported.isin,)
-                    print(f"Updated ISIN for {company.symbol}: {imported.isin}")
-
-                    company = self.company_repository.get_by_isin(imported.isin,)
-            
-            if company is None:
-                print(
-                    f"[WARNING] Company not found for "
-                    f"{imported.symbol} ({imported.isin})"
+                company = self.company_service.ensure_company(
+                    symbol=imported.symbol,
+                    isin=imported.isin,
                 )
+
+            except Exception as ex:
+
+                print(
+                    f"[WARNING] Unable to import "
+                    f"{imported.symbol}: {ex}"
+                )
+
                 continue
 
             holding = PortfolioHolding(

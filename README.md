@@ -3,7 +3,7 @@ and provides transparent, evidence-based insights to help investors make better 
 
 # 📈 Stock Intelligence Platform
 
-An Investment Intelligence Platform built with Python that helps investors make better decisions using quantitative analysis, portfolio analytics, financial data, benchmark comparison and AI-powered insights.
+An Investment Intelligence Platform built with Python that helps investors make better decisions using quantitative analysis, portfolio analytics, financial data and benchmark comparison.
 
 ---
 
@@ -45,7 +45,19 @@ The long-term goal is to build an intelligent assistant capable of answering que
 - Database Health
 - Company Count
 - Price Record Count
-- Portfolio Summary (placeholder)
+- Portfolio Summary
+
+### Watchlist
+
+- Separate research watchlist
+- Add, edit and remove stocks
+- Reference, target and alert prices
+- Priority, status, thesis and notes
+- Current price and target-upside tracking
+- Price history, returns, volatility and drawdown
+- 50-day and 200-day moving-average review
+- Valuation snapshot and deterministic signals
+- No LLM installation or AI API key required
 
 ---
 

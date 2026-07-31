@@ -148,3 +148,53 @@ portfolio_holdings = Table(
         name="uq_portfolio_company",
     ),
 )
+
+# ==========================================================
+# Watchlist
+# ==========================================================
+
+watchlist_items = Table(
+    "watchlist_items",
+    metadata,
+
+    Column(
+        "id",
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    ),
+
+    Column(
+        "company_id",
+        Integer,
+        ForeignKey("companies.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+
+    Column("entry_price", Float),
+    Column("target_price", Float),
+    Column("alert_price", Float),
+    Column("priority", String(20), nullable=False, default="Medium"),
+    Column("status", String(20), nullable=False, default="Watching"),
+    Column("thesis", Text),
+    Column("notes", Text),
+
+    Column(
+        "created_at",
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
+    ),
+
+    Column(
+        "updated_at",
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
+    ),
+
+    UniqueConstraint(
+        "company_id",
+        name="uq_watchlist_company",
+    ),
+)

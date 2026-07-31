@@ -1,6 +1,11 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from src.recommendation.dto.recommendation import Recommendation
+from src.scoring.dto.stock_score import StockScore
+
+if TYPE_CHECKING:
+    from src.analysis.stock_analyzer import StockAnalyzer
 
 
 @dataclass(slots=True)
@@ -23,6 +28,12 @@ class PortfolioPosition:
     profit_loss_percent: float
     
     recommendation: Recommendation
+    
+    score: StockScore
+
+    analysis: "StockAnalyzer"
+
+    allocation_percent: float = 0.0
 
     @property
     def rating(self):

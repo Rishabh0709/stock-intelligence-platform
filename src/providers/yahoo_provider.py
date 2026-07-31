@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pandas as pd
 import yfinance as yf
@@ -131,3 +131,65 @@ class YahooProvider(IDataProvider):
             )
 
         return prices
+
+    def get_recent_news(
+        self,
+        symbol: str,
+        limit: int = 8,
+    ) -> list[dict]:
+        """
+        Returns a normalized subset of recent Yahoo Finance news.
+
+        Yahoo's response shape has changed over time, so this method accepts
+        both the legacy flat payload and the newer nested ``content`` payload.
+        """
+        raw_items = self._ticker(symbol).news or []
+        normalized = []
+
+        for raw in raw_items[:limit]:
+            content = raw.get("content") or raw
+            canonical = content.get("canonicalUrl") or {}
+            click_through = content.get("clickThroughUrl") or {}
+            provider = content.get("provider") or {}
+
+            timestamp = (
+                content.get("pubDate")
+                or content.get("displayTime")
+                or raw.get("providerPublishTime")
+            )
+
+            if isinstance(timestamp, (int, float)):
+                timestamp = datetime.fromtimestamp(
+                    timestamp,
+                    tz=timezone.utc,
+                ).isoformat()
+
+            url = (
+                canonical.get("url")
+                or click_through.get("url")
+                or content.get("link")
+                or raw.get("link")
+            )
+
+            title = content.get("title") or raw.get("title")
+            if not title:
+                continue
+
+            normalized.append(
+                {
+                    "title": title,
+                    "publisher": (
+                        provider.get("displayName")
+                        or content.get("publisher")
+                        or raw.get("publisher")
+                    ),
+                    "published_at": timestamp,
+                    "url": url,
+                    "summary": (
+                        content.get("summary")
+                        or content.get("description")
+                    ),
+                }
+            )
+
+        return normalized

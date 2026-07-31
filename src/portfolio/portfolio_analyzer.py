@@ -113,7 +113,16 @@ class PortfolioAnalyzer:
                     profit_loss=pnl,
                     profit_loss_percent=pnl_percent,
                     recommendation=recommendation,
+                    score = score,
+                    analysis = analysis
                 )
+            )
+
+        for position in positions:
+            position.allocation_percent = (
+                position.current_value / current_value * 100
+                if current_value
+                else 0.0
             )
 
         total_profit = current_value - total_investment
