@@ -1,12 +1,18 @@
-from src.bootstrap import Bootstrap
-from src.analysis.stock_analyzer import StockAnalyzer
+import unittest
 
-bootstrap = Bootstrap()
+from src.analysis.volatility_analyzer import VolatilityAnalyzer
+from tests.fixtures import make_stock
 
-stock = bootstrap.stock_explorer_service.get_stock("RELIANCE")
 
-analysis = StockAnalyzer(stock)
+class VolatilityAnalyzerTests(unittest.TestCase):
+    def setUp(self):
+        self.analyzer = VolatilityAnalyzer(make_stock())
 
-print()
-print(type(analysis.volatility))
-print(analysis.volatility.analyze())
+    def test_classification_thresholds(self):
+        self.assertEqual(self.analyzer._classify(None), "Unknown")
+        self.assertEqual(self.analyzer._classify(0.25), "Moderate")
+        self.assertEqual(self.analyzer._classify(0.45), "Very High")
+
+
+if __name__ == "__main__":
+    unittest.main()

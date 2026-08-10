@@ -42,6 +42,7 @@ class CLI:
         print(f"Company     : {result.company_symbol}")
         print(f"Downloaded  : {result.downloaded_records}")
         print(f"Inserted    : {result.inserted_records}")
+        print(f"Updated     : {result.updated_records}")
         print(f"Skipped     : {result.skipped_records}")
         print(f"Latest Date : {result.latest_price_date}")
         print("=" * 40)

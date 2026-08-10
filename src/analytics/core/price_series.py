@@ -83,6 +83,10 @@ class PriceSeries:
         ]
 
     @property
+    def analysis_close_prices(self) -> list[float]:
+        return [p.analysis_price for p in self._prices]
+
+    @property
     def volumes(self) -> list[int | None]:
         return [
             p.volume
@@ -103,10 +107,13 @@ class PriceSeries:
         return pd.DataFrame(
             {
                 "Date": self.dates,
-                "Open": self.open_prices,
-                "High": self.high_prices,
-                "Low": self.low_prices,
-                "Close": self.close_prices,
+                # Technical analysis uses a consistently adjusted OHLC series.
+                # Raw values remain available on DailyPrice for market-value
+                # calculations, targets and stop prices.
+                "Open": [p.analysis_open for p in self._prices],
+                "High": [p.analysis_high for p in self._prices],
+                "Low": [p.analysis_low for p in self._prices],
+                "Close": self.analysis_close_prices,
                 "Adj Close": self.adjusted_close_prices,
                 "Volume": self.volumes,
             }
@@ -173,6 +180,10 @@ class PriceSeries:
             if latest
             else None
         )
+
+    def latest_analysis_close(self) -> float | None:
+        latest = self.latest()
+        return latest.analysis_price if latest else None
 
     def latest_open(self) -> float | None:
 
@@ -246,11 +257,7 @@ class PriceSeries:
         Daily percentage returns using adjusted close.
         """
 
-        prices = [
-            p
-            for p in self.adjusted_close_prices
-            if p is not None
-        ]
+        prices = self.analysis_close_prices
 
         returns = []
 

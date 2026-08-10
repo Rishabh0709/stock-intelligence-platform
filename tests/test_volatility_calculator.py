@@ -1,23 +1,19 @@
-from src.bootstrap import Bootstrap
+import unittest
 
-from src.analytics.statistics.volatility_calculator import (
-    VolatilityCalculator,
-)
+from src.analytics.statistics.volatility_calculator import VolatilityCalculator
+from tests.fixtures import make_series
 
-bootstrap = Bootstrap()
 
-stock = bootstrap.stock_explorer_service.get_stock("RELIANCE")
+class VolatilityCalculatorTests(unittest.TestCase):
+    def test_history_and_latest(self):
+        calculator = VolatilityCalculator(make_series(10))
+        history = calculator.history(period=3, annualize=False)
+        self.assertTrue(history)
+        self.assertEqual(calculator.latest(period=3, annualize=False), history[-1])
 
-calculator = VolatilityCalculator(stock.price_series)
+    def test_insufficient_history(self):
+        self.assertIsNone(VolatilityCalculator(make_series(2)).latest(period=3))
 
-print()
 
-print("Latest Volatility")
-print(calculator.latest())
-
-print()
-
-print("Last 10")
-
-for row in calculator.history()[-10:]:
-    print(row)
+if __name__ == "__main__":
+    unittest.main()

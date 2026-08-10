@@ -1,30 +1,25 @@
-from src.bootstrap import Bootstrap
+import unittest
+from datetime import date
+
 from src.analytics.core.drawdown_calculator import DrawdownCalculator
+from src.analytics.core.price_series import PriceSeries
+from src.models.daily_price import DailyPrice
 
 
-bootstrap = Bootstrap()
+def candle(index, close):
+    return DailyPrice(1, date(2026, 1, index), close, close, close, close, close, 1000)
 
-explorer = bootstrap.stock_explorer_service
 
-stock = explorer.get_stock("RELIANCE")
+class DrawdownCalculatorTests(unittest.TestCase):
+    def test_maximum_drawdown(self):
+        calculator = DrawdownCalculator(PriceSeries([candle(1, 100), candle(2, 80), candle(3, 90)]))
+        self.assertAlmostEqual(calculator.maximum(), -0.20)
+        self.assertAlmostEqual(calculator.latest(), -0.10)
 
-calculator = DrawdownCalculator(
-    stock.price_series,
-)
+    def test_empty_history(self):
+        calculator = DrawdownCalculator(PriceSeries([]))
+        self.assertIsNone(calculator.maximum())
 
-print()
 
-print("===== Latest Drawdown =====")
-print(calculator.latest())
-
-print()
-
-print("===== Maximum Drawdown =====")
-print(calculator.maximum())
-
-print()
-
-print("===== Last 10 Drawdowns =====")
-
-for row in calculator.historical()[-10:]:
-    print(row)
+if __name__ == "__main__":
+    unittest.main()

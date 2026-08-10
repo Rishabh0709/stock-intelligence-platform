@@ -1,14 +1,26 @@
-from src.portfolio.importer.zerodha_holding_parser import (
-    ZerodhaHoldingParser,
-)
+import tempfile
+import unittest
+from pathlib import Path
 
-parser = ZerodhaHoldingParser()
+from src.portfolio.importer.zerodha_holding_parser import ZerodhaHoldingParser
 
-holdings = parser.parse(
-    "C:\\Users\\Advik\\Downloads\\holdings_statement.csv",
-)
 
-print()
+class ZerodhaHoldingParserTests(unittest.TestCase):
+    def test_parses_portable_fixture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "holdings.csv"
+            path.write_text(
+                "Symbol,ISIN,Quantity Available,Average Price\n"
+                "RELIANCE,INE002A01018,5,1400.50\n",
+                encoding="utf-8",
+            )
+            holdings = ZerodhaHoldingParser().parse(path)
 
-for holding in holdings[:5]:
-    print(holding)
+        self.assertEqual(len(holdings), 1)
+        self.assertEqual(holdings[0].symbol, "RELIANCE")
+        self.assertEqual(holdings[0].quantity, 5)
+        self.assertEqual(holdings[0].average_price, 1400.50)
+
+
+if __name__ == "__main__":
+    unittest.main()

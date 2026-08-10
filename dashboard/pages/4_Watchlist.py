@@ -28,40 +28,62 @@ bootstrap = get_bootstrap()
 watchlist_service = bootstrap.watchlist_service
 analysis_service = bootstrap.watchlist_analysis_service
 
+
+@st.cache_data(ttl=900, show_spinner=False)
+def load_watchlist_overview(_service):
+    return _service.get_overview(refresh=True)
+
+
 st.title("👁️ Watchlist")
 st.caption(
-    "Track research candidates, targets and notes, then review their "
-    "price, risk, trend and valuation metrics."
+    "Enter only the NSE stock symbol, target price and alert price. "
+    "Market prices and historical ranges are populated automatically."
 )
 
-overview = watchlist_service.get_overview()
+if st.button("Refresh Market Data"):
+    load_watchlist_overview.clear()
+
+try:
+    with st.spinner("Refreshing watchlist market data..."):
+        overview = load_watchlist_overview(watchlist_service)
+except Exception as exc:
+    st.warning(
+        "Live refresh was unavailable. Showing the latest stored prices. "
+        f"Reason: {exc}"
+    )
+    overview = watchlist_service.get_overview()
+
 items = [row.item for row in overview]
 items_by_symbol = {item.symbol: item for item in items}
 
 if overview:
-    priority_order = {"High": 0, "Medium": 1, "Low": 2}
     overview = sorted(
         overview,
-        key=lambda row: (
-            priority_order.get(row.item.priority, 99),
-            row.item.symbol,
-        ),
+        key=lambda row: row.item.symbol,
     )
     table = pd.DataFrame(
         [
             {
                 "Symbol": row.item.symbol,
                 "Company": row.item.company_name,
-                "Priority": row.item.priority,
-                "Status": row.item.status,
                 "Current Price": row.current_price,
-                "Price Date": row.price_date,
-                "Entry Price": row.item.entry_price,
+                "1D Price": row.price_1d,
+                "1W Price": row.price_1w,
+                "1M Price": row.price_1m,
+                "6M Price": row.price_6m,
+                "1Y Price": row.price_1y,
+                "3Y Price": row.price_3y,
+                "52W High": row.fifty_two_week_high,
+                "52W Low": row.fifty_two_week_low,
+                "Overall Max": row.overall_high,
+                "Overall Min": row.overall_low,
                 "Target Price": row.item.target_price,
                 "Alert Price": row.item.alert_price,
-                "Alert": "Triggered" if row.alert_triggered else "",
                 "Target Upside %": row.upside_to_target_percent,
-                "Change From Entry %": row.change_from_entry_percent,
+                "Alert Status": (
+                    "Triggered" if row.alert_triggered else "Not triggered"
+                ),
+                "History Through": row.price_date,
             }
             for row in overview
         ]
@@ -72,14 +94,25 @@ if overview:
         hide_index=True,
         column_config={
             "Current Price": st.column_config.NumberColumn(format="₹%.2f"),
-            "Entry Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "1D Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "1W Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "1M Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "6M Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "1Y Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "3Y Price": st.column_config.NumberColumn(format="₹%.2f"),
+            "52W High": st.column_config.NumberColumn(format="₹%.2f"),
+            "52W Low": st.column_config.NumberColumn(format="₹%.2f"),
+            "Overall Max": st.column_config.NumberColumn(format="₹%.2f"),
+            "Overall Min": st.column_config.NumberColumn(format="₹%.2f"),
             "Target Price": st.column_config.NumberColumn(format="₹%.2f"),
             "Alert Price": st.column_config.NumberColumn(format="₹%.2f"),
             "Target Upside %": st.column_config.NumberColumn(format="%.2f%%"),
-            "Change From Entry %": st.column_config.NumberColumn(
-                format="%.2f%%"
-            ),
         },
+    )
+    st.caption(
+        "Historical columns use adjusted closing prices. Each lookback uses "
+        "the latest trading day on or before the requested date. Overall "
+        "Min/Max covers all history currently stored for that stock."
     )
 else:
     st.info("Your watchlist is empty. Add the first stock below.")
@@ -106,59 +139,26 @@ with manage_tab:
 
     with st.form("watchlist_form", clear_on_submit=selected_item is None):
         symbol = st.text_input(
-            "NSE symbol",
+            "Stock name (NSE symbol)",
             value=selected_item.symbol if selected_item else "",
             disabled=selected_item is not None,
             placeholder="e.g. RELIANCE",
         )
 
-        col1, col2, col3 = st.columns(3)
-        entry_price = col1.number_input(
-            "Reference / entry price",
-            min_value=0.0,
-            value=float(selected_item.entry_price or 0.0)
-            if selected_item else 0.0,
-            step=1.0,
-        )
-        target_price = col2.number_input(
+        col1, col2 = st.columns(2)
+        target_price = col1.number_input(
             "Target price",
             min_value=0.0,
             value=float(selected_item.target_price or 0.0)
             if selected_item else 0.0,
             step=1.0,
         )
-        alert_price = col3.number_input(
+        alert_price = col2.number_input(
             "Alert price",
             min_value=0.0,
             value=float(selected_item.alert_price or 0.0)
             if selected_item else 0.0,
             step=1.0,
-        )
-
-        col4, col5 = st.columns(2)
-        priority_options = ["High", "Medium", "Low"]
-        status_options = ["Watching", "Researching", "Ready", "Avoid"]
-        priority = col4.selectbox(
-            "Priority",
-            priority_options,
-            index=priority_options.index(selected_item.priority)
-            if selected_item else 1,
-        )
-        status = col5.selectbox(
-            "Status",
-            status_options,
-            index=status_options.index(selected_item.status)
-            if selected_item else 0,
-        )
-
-        thesis = st.text_area(
-            "Investment thesis",
-            value=selected_item.thesis or "" if selected_item else "",
-            placeholder="Why is this stock on the watchlist?",
-        )
-        notes = st.text_area(
-            "Research notes",
-            value=selected_item.notes or "" if selected_item else "",
         )
 
         submitted = st.form_submit_button(
@@ -171,14 +171,10 @@ with manage_tab:
             with st.spinner("Saving and validating the stock symbol..."):
                 watchlist_service.save(
                     symbol=symbol,
-                    entry_price=entry_price or None,
                     target_price=target_price or None,
                     alert_price=alert_price or None,
-                    priority=priority,
-                    status=status,
-                    thesis=thesis,
-                    notes=notes,
                 )
+            load_watchlist_overview.clear()
             st.success(f"{symbol.upper()} saved to the watchlist.")
             st.rerun()
         except Exception as exc:
@@ -202,6 +198,7 @@ with manage_tab:
             watchlist_service.remove(
                 items_by_symbol[remove_symbol].company_id
             )
+            load_watchlist_overview.clear()
             st.success(f"{remove_symbol} removed.")
             st.rerun()
 
@@ -229,7 +226,6 @@ with analysis_tab:
                 with st.spinner("Refreshing prices and calculating metrics..."):
                     result = analysis_service.analyze(
                         analysis_symbol,
-                        entry_price=item.entry_price,
                         target_price=item.target_price,
                         alert_price=item.alert_price,
                     )

@@ -1,25 +1,35 @@
-from src.bootstrap import Bootstrap
+import unittest
+from types import SimpleNamespace
 
-bootstrap = Bootstrap()
+from src.portfolio.dto.imported_holding import ImportedHolding
+from src.portfolio.portfolio_import_service import PortfolioImportService
 
-count = bootstrap.portfolio_import_service.import_holdings(
-    file_path = 'C:\\Users\\Advik\\Downloads\\holdings_statement.csv'
-)
 
-print()
+class CompanyServiceStub:
+    def ensure_company(self, symbol, isin):
+        return SimpleNamespace(id=7, symbol=symbol, isin=isin)
 
-company = bootstrap.company_repository.get_by_symbol("TCS")
-print(company)
 
-company = bootstrap.company_repository.get_by_symbol("SBIN")
-print(company)
+class PortfolioRepositoryStub:
+    def __init__(self):
+        self.holdings = []
 
-company = bootstrap.company_repository.get_by_symbol("RELIANCE")
-print(company)
+    def upsert(self, holding):
+        self.holdings.append(holding)
 
-#print(f"Imported {count} holdings")
 
-print()
+class PortfolioImportServiceTests(unittest.TestCase):
+    def test_imports_parsed_holding(self):
+        repository = PortfolioRepositoryStub()
+        service = PortfolioImportService(CompanyServiceStub(), repository)
+        service.parser = SimpleNamespace(
+            parse=lambda _: [ImportedHolding("RELIANCE", "INE002A01018", 5, 1400)]
+        )
+        count = service.import_holdings("unused.csv")
+        self.assertEqual(count, 1)
+        self.assertEqual(repository.holdings[0].company_id, 7)
+        self.assertEqual(repository.holdings[0].quantity, 5)
 
-#for holding in bootstrap.portfolio_repository.get_all():
-    #print(holding)
+
+if __name__ == "__main__":
+    unittest.main()

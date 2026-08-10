@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, insert, update, delete, func
 
 from src.models.portfolio_holding import PortfolioHolding
 

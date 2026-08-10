@@ -1,34 +1,20 @@
-from src.bootstrap import Bootstrap
-
+import unittest
 
 from src.analytics.core.return_calculator import ReturnCalculator
+from tests.fixtures import make_series
 
 
-bootstrap = Bootstrap()
+class ReturnCalculatorTests(unittest.TestCase):
+    def test_returns_are_calculated_from_available_prices(self):
+        calculator = ReturnCalculator(make_series(3))
+        self.assertAlmostEqual(calculator.daily_return(), 1 / 101)
+        self.assertAlmostEqual(calculator.total_return(), 0.02)
 
-explorer = bootstrap.stock_explorer_service
+    def test_single_price_has_no_return(self):
+        calculator = ReturnCalculator(make_series(1))
+        self.assertIsNone(calculator.daily_return())
+        self.assertIsNone(calculator.total_return())
 
-stock = explorer.get_stock("RELIANCE")
-company = bootstrap.company_repository.get_by_symbol("RELIANCE")
-print(stock.price_series.latest())
 
-print(company)
-
-rows = bootstrap.price_repository.list_by_company(company.id)
-
-print("Row count:", len(rows))
-print()
-
-for price in rows[-5:]:
-    print (price)
-#print(stock.price_series.close_prices[-5:])
-
-calculator = ReturnCalculator(stock.price_series)
-
-print()
-
-print("Daily Return :", calculator.daily_return())
-
-print("Total Return :", calculator.total_return())
-
-print("CAGR :", calculator.cagr())
+if __name__ == "__main__":
+    unittest.main()

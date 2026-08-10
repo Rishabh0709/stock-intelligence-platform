@@ -1,13 +1,13 @@
-from sqlalchemy import select
-from src.database.tables import daily_prices
+from src.screening import analyze_stock, scan_stocks
 
-stmt = (
-    select(daily_prices)
-    .where(daily_prices.c.company_id == company.id)
-    .order_by(daily_prices.c.price_date.desc())
-    .limit(5)
+report = analyze_stock(
+    indicator_df,
+    symbol="RELIANCE",
+    account_capital=500_000,
+    risk_percent=1,
 )
 
-with bootstrap.price_repository.engine.connect() as conn:
-    for row in conn.execute(stmt):
-        print(row)
+print(report.score.score)
+print(report.score.category)
+print(report.active_signals)
+print(report.risk)

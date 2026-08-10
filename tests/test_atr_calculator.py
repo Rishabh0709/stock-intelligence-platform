@@ -1,19 +1,19 @@
-from src.bootstrap import Bootstrap
+import unittest
+
 from src.analytics.indicators.atr_calculator import ATRCalculator
+from tests.fixtures import make_series
 
 
-bootstrap = Bootstrap()
+class ATRCalculatorTests(unittest.TestCase):
+    def test_short_history_returns_no_signal(self):
+        calculator = ATRCalculator(make_series(10))
+        self.assertEqual(calculator.atr(period=14), [])
+        self.assertIsNone(calculator.latest(period=14))
 
-stock = bootstrap.stock_explorer_service.get_stock("RELIANCE")
+    def test_invalid_period_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ATRCalculator(make_series()).atr(0)
 
-calculator = ATRCalculator(stock.price_series)
 
-print()
-print("===== Latest ATR =====")
-print(calculator.latest())
-
-print()
-print("===== Last 10 ATR =====")
-
-for row in calculator.atr()[-10:]:
-    print(row)
+if __name__ == "__main__":
+    unittest.main()

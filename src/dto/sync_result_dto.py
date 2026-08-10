@@ -10,7 +10,9 @@ class SyncResultDTO:
     downloaded_records: int
 
     inserted_records: int
-    
+
+    updated_records: int
+
     skipped_records: int
 
     latest_price_date: date | None

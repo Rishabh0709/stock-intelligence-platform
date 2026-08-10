@@ -37,11 +37,7 @@ class WatchlistAnalysisService:
 
     @staticmethod
     def _price_value(price: DailyPrice) -> float:
-        return (
-            price.adjusted_close
-            if price.adjusted_close is not None
-            else price.close_price
-        )
+        return price.analysis_price
 
     @classmethod
     def _return_for_days(
@@ -167,7 +163,7 @@ class WatchlistAnalysisService:
         snapshot = self.provider.get_snapshot(symbol)
         latest = prices[-1]
         latest_adjusted_close = self._price_value(latest)
-        current_price = snapshot.current_price or latest_adjusted_close
+        current_price = snapshot.current_price or latest.market_price
         one_year_prices = prices[-253:]
         one_year_values = [
             self._price_value(price) for price in one_year_prices

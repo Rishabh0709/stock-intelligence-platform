@@ -79,6 +79,10 @@ daily_prices = Table(
 
     Column("volume", BigInteger),
 
+    Column("provider", String(100)),
+    Column("downloaded_at", DateTime(timezone=True)),
+    Column("last_verified_at", DateTime(timezone=True)),
+
     Column(
         "created_at",
         DateTime,

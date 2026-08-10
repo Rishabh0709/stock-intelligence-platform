@@ -1,31 +1,22 @@
-from src.bootstrap import Bootstrap
-from src.analysis.stock_analyzer import StockAnalyzer
-
-from src.scoring.score_engine import ScoreEngine
-from src.scoring.rules.trend_rule import TrendRule
-from src.scoring.rules.momentum_rule import MomentumRule
-from src.scoring.rules.risk_rule import RiskRule
-from src.scoring.rules.volatility_rule import VolatilityRule
+import unittest
 
 from src.recommendation.recommendation_engine import RecommendationEngine
+from src.scoring.dto.score_result import ScoreResult
+from src.scoring.dto.stock_score import StockScore
 
-bootstrap = Bootstrap()
 
-stock = bootstrap.stock_explorer_service.get_stock("RELIANCE")
+class RecommendationEngineTests(unittest.TestCase):
+    def test_builds_rating_and_explanations(self):
+        score = StockScore(
+            score=10,
+            max_score=10,
+            results=[ScoreResult("trend", 10, True, "trend is constructive")],
+        )
+        recommendation = RecommendationEngine().recommend(score)
+        self.assertEqual(recommendation.rating, "Strong Buy")
+        self.assertIn("trend is constructive", recommendation.strengths)
+        self.assertIn("Strong Buy", recommendation.summary)
 
-analysis = StockAnalyzer(stock)
 
-engine = ScoreEngine(
-    rules=[
-        TrendRule(),
-        MomentumRule(),
-        RiskRule(),
-        VolatilityRule(),
-    ]
-)
-
-score = engine.score(analysis)
-
-recommendation = RecommendationEngine().recommend(score)
-
-print(recommendation)
+if __name__ == "__main__":
+    unittest.main()

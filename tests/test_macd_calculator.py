@@ -1,24 +1,17 @@
-from src.bootstrap import Bootstrap
+import unittest
+from unittest.mock import patch
+
 from src.analytics.indicators.macd_calculator import MACDCalculator
+from tests.fixtures import make_series
 
 
-bootstrap = Bootstrap()
+class MACDCalculatorTests(unittest.TestCase):
+    def test_provider_none_returns_no_signal(self):
+        with patch("src.analytics.indicators.macd_calculator.ta.macd", return_value=None):
+            calculator = MACDCalculator(make_series(40))
+            self.assertEqual(calculator.macd(), [])
+            self.assertIsNone(calculator.latest())
 
-stock = bootstrap.stock_explorer_service.get_stock("RELIANCE")
 
-calculator = MACDCalculator(
-    stock.price_series,
-)
-
-print()
-
-print("===== Latest MACD =====")
-
-print(calculator.latest())
-
-print()
-
-print("===== Last 10 =====")
-
-for row in calculator.macd()[-10:]:
-    print(row)
+if __name__ == "__main__":
+    unittest.main()

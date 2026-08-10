@@ -1,77 +1,15 @@
-from src.bootstrap import Bootstrap
+import unittest
+
 from src.analysis.stock_analyzer import StockAnalyzer
+from tests.fixtures import make_stock
 
 
-bootstrap = Bootstrap()
+class StockAnalyzerTests(unittest.TestCase):
+    def test_exposes_canonical_analysis_components(self):
+        analyzer = StockAnalyzer(make_stock())
+        for name in ("trend", "momentum", "risk", "volatility", "returns", "drawdown"):
+            self.assertIsNotNone(getattr(analyzer, name))
 
-stock = bootstrap.stock_explorer_service.get_stock("RELIANCE")
 
-analysis = StockAnalyzer(stock)
-
-print()
-
-print("Company")
-
-print(stock.company.company_name)
-
-print()
-
-print("Latest RSI")
-
-print(analysis.rsi.latest())
-
-print()
-
-print("Latest MACD")
-
-print(analysis.macd.latest())
-
-print()
-
-print("Latest ATR")
-
-print(analysis.atr.latest())
-
-print()
-
-print("Latest ADX")
-
-print(analysis.adx.latest())
-
-print()
-
-print("Latest Bollinger")
-
-print(analysis.bollinger.latest())
-
-print()
-
-print("Trend")
-print(analysis.trend.analyze())
-
-print()
-
-print("Momentum")
-print(analysis.momentum.analyze())
-
-print()
-
-print("Risk")
-print(analysis.risk.analyze())
-
-print()
-
-print("Volatility")
-print(analysis.volatility.analyze())
-
-print()
-
-print("Maximum Drawdown")
-
-print(analysis.drawdown.maximum())
-
-print()
-
-print("CAGR")
-
-print(analysis.returns.cagr())
+if __name__ == "__main__":
+    unittest.main()
