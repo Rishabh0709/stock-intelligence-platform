@@ -50,6 +50,7 @@ class FakeProvider:
 class StockMarketStatsServiceTest(unittest.TestCase):
     def setUp(self):
         database = MemoryDatabase()
+        self.addCleanup(database.engine.dispose)
         self.company_repository = SQLiteCompanyRepository(database)
         self.price_repository = SQLitePriceRepository(database)
         self.company_service = FakeCompanyService(self.company_repository)

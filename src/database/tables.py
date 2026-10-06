@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 
 from sqlalchemy.sql import func
-from datetime import datetime
+from src.utils.time import utc_now
 
 metadata = MetaData()
 
@@ -135,15 +135,15 @@ portfolio_holdings = Table(
     Column(
         "created_at",
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
         nullable=False,
     ),
 
     Column(
         "updated_at",
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     ),
 

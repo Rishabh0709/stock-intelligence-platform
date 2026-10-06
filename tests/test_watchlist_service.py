@@ -41,6 +41,7 @@ class FakeCompanyService:
 class WatchlistServiceTest(unittest.TestCase):
     def setUp(self):
         database = MemoryDatabase()
+        self.addCleanup(database.engine.dispose)
         self.company_repository = SQLiteCompanyRepository(database)
         self.price_repository = SQLitePriceRepository(database)
         self.repository = SQLiteWatchlistRepository(database)

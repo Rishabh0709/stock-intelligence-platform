@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from src.utils.time import utc_now
 
 
 @dataclass(slots=True)
@@ -29,4 +30,4 @@ class Company:
 
     business_description: str | None = None
 
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=utc_now)
